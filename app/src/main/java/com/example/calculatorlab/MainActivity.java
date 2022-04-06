@@ -23,7 +23,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void toGraphs(View view) {
-
+        Intent intent = new Intent(this, GraphicActivity.class);
+        startActivity(intent);
     }
 
     public void toExit(View view) {
