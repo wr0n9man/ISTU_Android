@@ -17,6 +17,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import com.example.calculatorlab.data.Point;
+import com.example.calculatorlab.logic.Graphic;
+
 import org.w3c.dom.Text;
 
 public class GraphicActivity extends AppCompatActivity {
@@ -37,15 +40,23 @@ public class GraphicActivity extends AppCompatActivity {
 
     private Canvas canvas;
     private TextView rangeTextView;
+    private TextView extremesTextView;
+
+    private Graphic graphic;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
         setContentView(R.layout.activity_graphic);
 
         rangeTextView = (TextView)findViewById(R.id.range);
+        extremesTextView = (TextView)findViewById(R.id.extremes);
+        createSurface();
 
+        graphic = new Graphic(getBaseContext());
+    }
+
+    public void createSurface() {
         SurfaceView surface = (SurfaceView) findViewById(R.id.surface);
         surface.getHolder().addCallback(new SurfaceHolder.Callback() {
 
@@ -62,6 +73,7 @@ public class GraphicActivity extends AppCompatActivity {
 
                 drawGrid(stepX, stepY);
                 drawSinXGraph();
+                drawExtremes();
 
                 holder.unlockCanvasAndPost(canvas);
             }
@@ -111,6 +123,8 @@ public class GraphicActivity extends AppCompatActivity {
     }
 
     public void drawSinXGraph() {
+        graphic.clearCords();
+
         int width = canvas.getWidth();
         int height = canvas.getHeight();
 
@@ -121,15 +135,54 @@ public class GraphicActivity extends AppCompatActivity {
         float offsetX = -10;
         float offsetY = height / 2;
 
-        for(float i = 0f; i < lengthX - 0.1f; i += 0.1f) {
+        int length = Math.round((lengthX - 0.1f) * 10);
 
-            float x = i * scaleX;
-            float y = offsetY - (float)Math.sin(i + offsetX) * scaleY;
+        Point [] points = new Point[length];
+        for(int i = 0; i < length; i++) {
+            points[i] = new Point();
+        }
 
-            float x2 = (i + 0.1f) * scaleX;
-            float y2 = offsetY - (float)Math.sin(i + 0.1 + offsetX) * scaleY;
+        int j = 0;
+        //for(float i = 0f; i < lengthX - 0.1f; i += 0.1f, j++) {
+        for(int i = 0; i < length; i ++, j++) {
+
+            points[j].setX(i * 0.1f);
+            points[j].setY((float)Math.sin(points[j].getX() + offsetX));
+
+            float x = points[j].getX() * scaleX;
+            float y = offsetY - points[j].getY() * scaleY;
+
+            float x2 = (points[j].getX() + 0.1f) * scaleX;
+            float y2 = offsetY - (float)Math.sin(points[j].getX() + 0.1 + offsetX) * scaleY;
 
             canvas.drawLine(x, y,  x2, y2, paint);
         }
+
+        graphic.addCords(points);
+    }
+
+    public void drawExtremes() {
+        final float E = 0.0012f;
+        Point [] points = graphic.getCords();
+
+        Paint paint = new Paint();
+        paint.setColor(RED);
+        paint.setStrokeWidth(15);
+
+        float offsetY = canvas.getHeight() / 2;
+
+        int j = 0;
+
+        for(int i = 0; i < points.length; i++) {
+            if(1 - Math.abs(points[i].getY()) <= E) {
+                canvas.drawPoint(points[i].getX() * scaleX,
+                                 offsetY - points[i].getY() * scaleY,
+                                    paint);
+
+                j++;
+            }
+        }
+
+        extremesTextView.setText(String.format("Найдено %d экстремумов", j));
     }
 }
